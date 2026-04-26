@@ -26,7 +26,7 @@ func FetchAndWrite(
 	// q.Set("apiKey", apiKey)
 
 	nvdURL.RawQuery = q.Encode()
-	fmt.Printf("fetching, %s", nvdURL.String())
+	fmt.Printf("fetching, %s\n", nvdURL.String())
 
 	res, err := http.Get(nvdURL.String())
 	if err != nil {
@@ -41,7 +41,13 @@ func FetchAndWrite(
 		return nil, err
 	}
 
-	err = os.WriteFile(filePath, []byte(string(body)), 0644)
+	// if it's valid json then only write to file
+	if !json.Valid(body) {
+		log.Println("Is invalid json", string(body))
+		return nil, err
+	}
+
+	err = os.WriteFile(filePath, []byte(string(body)), 0o644)
 	if err != nil {
 		log.Fatal("Couldn't write to a file")
 		return nil, err
