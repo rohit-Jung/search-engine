@@ -19,7 +19,7 @@ func Tokenize(doc string) []string {
 	// NAIVE: currently it's spliting on whitespace only
 	// parts := strings.Split(doc, " ")
 
-	// split on anything thats non alphanumeric
+	// split on anything thats non alphanumeric, removes puncations
 	words := strings.FieldsFunc(doc, func(r rune) bool {
 		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
 	})
@@ -37,21 +37,19 @@ func Tokenize(doc string) []string {
 		}
 
 		// cleanup puncations and all
-		// stemmed := Stem(w)
-
-		// TODO: stem the words
-		tokens = append(tokens, w)
+		stemmed := Stem(w)
+		tokens = append(tokens, stemmed)
 	}
 
 	return tokens
 }
 
 // TermFreqToken TF calculation
-func TermFreqToken(tokens []string) map[string]int {
-	freq := make(map[string]int)
+func TermFreqToken(text string, termFreqMap map[string]int) map[string]int {
+	tokens := Tokenize(text)
 	for _, w := range tokens {
 		// cause zero value of int is 0 so
-		freq[w]++
+		termFreqMap[w]++
 	}
-	return freq
+	return termFreqMap
 }
