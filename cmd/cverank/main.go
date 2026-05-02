@@ -1,9 +1,10 @@
 package main
 
 import (
-	"encoding/json"
+	"flag"
 	"log"
 	"sort"
+	"time"
 
 	"github.com/rohit-Jung/search-engine/config"
 	nvd "github.com/rohit-Jung/search-engine/internal/fetcher"
@@ -19,37 +20,54 @@ type kv struct {
 }
 
 func main() {
+	var (
+		query = flag.String("query", "openssl", "query string")
+		topN  = flag.Int("top", 5, "number of results")
+	)
+	flag.Parse()
+
 	config, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal("Error while reading env", err)
 	}
 
+	start := time.Now()
 	corpus := nvd.GetEntireCorpus(config.Nvd.APIKey)
+	log.Printf("corpus loaded n=%d elapsed=%s", len(corpus), time.Since(start).Truncate(time.Millisecond))
 
 	// 1. build tf
+	start = time.Now()
 	tf := ranking.NewTFIndex()
 	for _, cve := range corpus {
 		if err := tf.Add(cve); err != nil {
 			continue
 		}
 	}
+	log.Printf("tf built docs=%d elapsed=%s", len(tf.TermFreqs), time.Since(start).Truncate(time.Millisecond))
 
 	// 2. build idf
+	start = time.Now()
 	idf := ranking.BuildIDF(tf.TermFreqs)
+	log.Printf("idf built terms=%d elapsed=%s", idf.TermCount(), time.Since(start).Truncate(time.Millisecond))
 
 	// 3. build inverted index
+	start = time.Now()
 	inverted := ranking.BuildInverted(tf.TermFreqs)
+	log.Printf("inverted built terms=%d elapsed=%s", len(inverted), time.Since(start).Truncate(time.Millisecond))
 
 	// 4. build pagerankc
+	start = time.Now()
 	g := graph.BuildGraph(corpus)    // CPE → adjacency list
 	prScores := graph.RunPageRank(g) // map[cve_id]float64
+	log.Printf("pagerank built nodes=%d elapsed=%s", len(prScores), time.Since(start).Truncate(time.Millisecond))
 
 	// 4. query
-	query := "openssl"
-	queryTerms := tokenizer.Tokenize(query)
+	queryTerms := tokenizer.Tokenize(*query)
 
 	// 5. get bm25scores for query
+	start = time.Now()
 	bm25scores := ranking.BM25Score(queryTerms, inverted, tf, idf)
+	log.Printf("bm25 scored docs=%d elapsed=%s", len(bm25scores), time.Since(start).Truncate(time.Millisecond))
 
 	// make a cvss map
 	cvssMap := make(map[string]float64)
@@ -58,17 +76,19 @@ func main() {
 	}
 
 	// 6. get hybridScores
+	start = time.Now()
 	scores := ranking.HybridRankin(bm25scores, prScores, cvssMap, corpus)
+	log.Printf("hybrid scored docs=%d elapsed=%s", len(scores), time.Since(start).Truncate(time.Millisecond))
 
 	// 7. extract top 5
-	results := getTopN(5, scores, bm25scores, prScores, cvssMap, corpus)
+	getTopN(*topN, scores, bm25scores, prScores, cvssMap, corpus)
 
-	b, err := json.MarshalIndent(results, "", "  ")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Println(string(b))
+	// b, err := json.MarshalIndent(results, "", "  ")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	//
+	// log.Println(string(b))
 }
 
 func getTopN(n int,
