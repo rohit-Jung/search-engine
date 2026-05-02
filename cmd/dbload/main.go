@@ -92,8 +92,8 @@ func main() {
 }
 
 func ensureSchema(ctx context.Context, db *sql.DB) error {
-	// Minimal relational projection for baseline SELECT queries.
-	// raw JSON is retained for traceability and to support future experiments.
+	// minimal relational projection for baseline select queries.
+	// raw json is retained for traceability and to support future experiments.
 	ddl := `
 CREATE TABLE IF NOT EXISTS cves (
   cve_id TEXT PRIMARY KEY,
@@ -121,6 +121,7 @@ CREATE INDEX IF NOT EXISTS idx_cves_cpe_product ON cves (cpe_product);
 CREATE INDEX IF NOT EXISTS idx_cves_cpe_product_trgm ON cves USING gin (cpe_product gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_cves_cpe_vendor_trgm ON cves USING gin (cpe_vendor gin_trgm_ops);
 `
+
 	// pg_trgm for fast ILIKE baseline.
 	if _, err := db.ExecContext(ctx, `CREATE EXTENSION IF NOT EXISTS pg_trgm;`); err != nil {
 		return err
@@ -135,6 +136,7 @@ func loadPage(ctx context.Context, db *sql.DB, vulnerabilities []parser.Vulnerab
 	if err != nil {
 		return 0, err
 	}
+
 	defer func() {
 		_ = tx.Rollback()
 	}()
@@ -220,8 +222,6 @@ SET description = EXCLUDED.description,
 	return n, nil
 }
 
-var nilString = ""
-
 func nullIfEmpty(s string) any {
 	if s == "" {
 		return nil
@@ -229,26 +229,12 @@ func nullIfEmpty(s string) any {
 	return s
 }
 
-func firstProduct(c parser.CVE) string {
-	for _, conf := range c.Configurations {
-		for _, node := range conf.Nodes {
-			for _, cpe := range node.CPEMatch {
-				d := cpe.GetCPEDetails()
-				if d != nil && d.Product != "" {
-					return d.Product
-				}
-			}
-		}
-	}
-	return ""
-}
-
 func firstCPEDetails(c parser.CVE) (part, vendor, product, version string) {
 	for _, conf := range c.Configurations {
 		for _, node := range conf.Nodes {
 			for _, cpe := range node.CPEMatch {
 				parts := strings.Split(cpe.Criteria, ":")
-				// Expect: cpe:2.3:<part>:<vendor>:<product>:<version>:...
+				// expect: cpe:2.3:<part>:<vendor>:<product>:<version>:...
 				if len(parts) < 6 {
 					continue
 				}
