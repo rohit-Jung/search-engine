@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Search Demo</title>
+    <link rel="stylesheet" href="./style.css"/>
+    <script src="./main.js" defer type="text/javascript"></script>
+  </head>
+  <body>
+    <div class="page">
+      <div class="topbar">
+        <div class="micro">Interactive Demonstration</div>
+        <div class="micro">Search Engine vs SQL Baseline</div>
+      </div>
+
+      <div class="hero">
+        <h1>Search in Action</h1>
+        <div class="accent"></div>
+      </div>
+
+      <div class="content">
+        <div class="form">
+          <div>
+            <label for="library">Library Name or Vulnerability info</label>
+            <input id="library" type="text" value="openssl" placeholder="e.g., openssl, log4j, django" />
+          </div>
+          <div>
+            <label for="severity">Minimum Severity</label>
+            <select id="severity">
+              <option value="LOW">LOW</option>
+              <option value="MEDIUM">MEDIUM</option>
+              <option value="HIGH" selected>HIGH</option>
+              <option value="CRITICAL">CRITICAL</option>
+            </select>
+          </div>
+          <div>
+            <label for="topN">Results per column</label>
+            <select id="topN">
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20" selected>20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="search">SEARCH</button>
+          <button id="health">HEALTH</button>
+        </div>
+
+        <div class="meta">
+          <div class="micro" id="meta"></div>
+          <div class="error" id="error"></div>
+        </div>
+
+        <div class="grid">
+          <div>
+            <div class="sectionTitle">
+              <h2>Search Engine</h2>
+              <p class="resultsCount" id="count-ranked">0 results</p>
+            </div>
+            <div class="list" id="ranked"></div>
+          </div>
+
+          <div>
+            <div class="sectionTitle">
+              <h2>SQL Baseline</h2>
+              <p class="resultsCount" id="count-baseline">0 results</p>
+            </div>
+            <div id="baseline-error"></div>
+            <div class="list" id="baseline"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>
