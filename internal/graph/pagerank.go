@@ -29,7 +29,7 @@ func RunPageRank(graph *Graph) map[string]float64 {
 		scores[id] = 1.0 / N
 	}
 
-	// iterate until convergence
+	// iterate until convergence (or iteration cap)
 	for range iterations {
 		newScores := make(map[string]float64)
 		maxDelta := 0.0
@@ -37,24 +37,24 @@ func RunPageRank(graph *Graph) map[string]float64 {
 		// calculate new scores
 		for id := range graph.Ajacency {
 			newScores[id] = (1 - damping) / N
-
-			// calc out degree
 			for _, neighbor := range graph.Ajacency[id] {
-
-				// this is the relations it have with other
-				// sumation part we are calculating
-				outDegrees := float64(len(graph.Ajacency[id]))
-				if outDegrees > 0 {
-					newScores[id] += damping * scores[neighbor] / outDegrees
+				outDegree := float64(len(graph.Ajacency[neighbor]))
+				if outDegree == 0 {
+					continue
 				}
-
-				delta := math.Abs(newScores[id] - scores[id])
-				maxDelta = max(delta, maxDelta)
+				newScores[id] += damping * scores[neighbor] / outDegree
 			}
+		}
 
+		for id := range graph.Ajacency {
+			delta := math.Abs(newScores[id] - scores[id])
+			maxDelta = max(delta, maxDelta)
 		}
 
 		scores = newScores
+		if maxDelta < threshold {
+			break
+		}
 	}
 
 	return internal.NormaliseMap(scores)
