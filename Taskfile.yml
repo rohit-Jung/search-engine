@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+vars:
+  GREETING: Hello, world!
+
+tasks:
+  default:
+    desc: Print a greeting message
+    cmds:
+      - echo "{{.GREETING}}"
+    silent: true
+
+  run:
+    desc: Runs the search-engine 
+    cmds:
+      - go run ./cmd/cverank/main.go 
+    silent: true
+
+  server:
+    desc: Run API + frontend server on :8080
+    cmds:
+      - go run ./cmd/server/main.go -addr :8080
+    silent: true
+
+  db-up:
+    desc: Start Postgres via Docker (baseline DB)
+    cmds:
+      - docker compose up -d
+    silent: true
+
+  db-down:
+    desc: Stop Postgres via Docker
+    cmds:
+      - docker compose down
+    silent: true
+
+  db-reset:
+    desc: Reset Postgres volume (DELETES DB DATA)
+    cmds:
+      - docker compose down -v
+    silent: true
+
+  db-load:
+    desc: Load cached NVD JSON into Postgres
+    cmds:
+      - go run ./cmd/dbload/main.go
+    silent: true
+
+  db-search:
+    desc: Baseline SQL search (ILIKE)
+    cmds:
+      - go run ./cmd/dbsearch/main.go
+    silent: true
