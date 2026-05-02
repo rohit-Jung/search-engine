@@ -11,14 +11,20 @@ import (
 )
 
 type Config struct {
-	Nvd      NvdConfig      `koanf:"nvd" validate:"required"`
-	Database DatabaseConfig `koanf:"database" validate:"required"`
+	Nvd      NvdConfig      `koanf:"nvd"`
+	Database DatabaseConfig `koanf:"database"`
 }
 
-type DatabaseConfig struct{}
+type DatabaseConfig struct {
+	Host     string `koanf:"host" validate:"required"`
+	Port     int    `koanf:"port" validate:"required"`
+	User     string `koanf:"user" validate:"required"`
+	Password string `koanf:"password"`
+	Name     string `koanf:"name" validate:"required"`
+}
 
 type NvdConfig struct {
-	APIKey string `koanf:"api_key" validate:"required"`
+	APIKey string `koanf:"api_key"`
 }
 
 var envPrefix = "SEARCH_ENGINE_"
@@ -39,10 +45,31 @@ func LoadConfig() (*Config, error) {
 		return nil, err
 	}
 
+	applyDefaults(mainConfig)
+
 	v := validator.New()
 	if err := v.Struct(mainConfig); err != nil {
 		return nil, err
 	}
 
 	return mainConfig, nil
+}
+
+func applyDefaults(cfg *Config) {
+	// Defaults are chosen to match docker-compose.yml provided in this repo.
+	if cfg.Database.Host == "" {
+		cfg.Database.Host = "localhost"
+	}
+	if cfg.Database.Port == 0 {
+		cfg.Database.Port = 5432
+	}
+	if cfg.Database.User == "" {
+		cfg.Database.User = "postgres"
+	}
+	if cfg.Database.Password == "" {
+		cfg.Database.Password = "postgres"
+	}
+	if cfg.Database.Name == "" {
+		cfg.Database.Name = "search_engine"
+	}
 }
