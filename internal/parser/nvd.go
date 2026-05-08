@@ -24,6 +24,35 @@ func (c *CVE) GetCVSSScore() float64 {
 	return 0.0
 }
 
+func (c *CVE) GetAttackVector() string {
+	if len(c.Metrics.CVSSMetricV31) > 0 {
+		av := strings.ToUpper(strings.TrimSpace(c.Metrics.CVSSMetricV31[0].CVSSData.AttackVector))
+		if av != "" {
+			return av
+		}
+	}
+	if len(c.Metrics.CVSSMetricV2) > 0 {
+		av := strings.ToUpper(strings.TrimSpace(c.Metrics.CVSSMetricV2[0].CVSSData.AccessVector))
+		if av != "" {
+			return av
+		}
+	}
+	return ""
+}
+
+func (c *CVE) GetCWE() (id string, name string) {
+	for _, w := range c.Weaknesses {
+		for _, d := range w.Description {
+			v := strings.TrimSpace(d.Value)
+			if v != "" {
+				// NVD commonly provides values like "CWE-79".
+				return v, ""
+			}
+		}
+	}
+	return "", ""
+}
+
 func (c *CVE) ShouldIndex() bool {
 	// are rejected CVE
 	if strings.ToLower(c.VulnStatus) == "rejected" {

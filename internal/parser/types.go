@@ -54,7 +54,10 @@ type CVSSData struct {
 	Version      string  `json:"version"`
 	VectorString string  `json:"vectorString"`
 	BaseScore    float64 `json:"baseScore"`
-	AccessVector string  `json:"accessVector"`
+	// CVSS v2
+	AccessVector string `json:"accessVector"`
+	// CVSS v3.x
+	AttackVector string `json:"attackVector"`
 }
 
 type CVSSMetricV2 struct {
