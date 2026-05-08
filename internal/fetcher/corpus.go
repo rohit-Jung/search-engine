@@ -22,7 +22,7 @@ func GetCorpus(numCve int, pageSize int, apiKey string) []parser.CVE {
 		var result parser.NVDResponse
 
 		if err != nil {
-			fetchRes, err := FetchAndWrite(strconv.Itoa(i), "100", filePath, apiKey)
+			fetchRes, err := FetchAndWrite(strconv.Itoa(i), strconv.Itoa(pageSize), filePath, apiKey)
 			if err != nil {
 				log.Fatal("Error while fetching", err)
 			}
@@ -63,8 +63,10 @@ func GetCorpusParallel(numCve int, pageSize int, apiKey string) []parser.CVE {
 
 	// num of request with and without api key differ so
 	maxWorkers := 5
+	rateLimitDelay := 700 * time.Millisecond
 	if apiKey == "" {
 		maxWorkers = 1
+		rateLimitDelay = 6 * time.Second // NVD allows 5 req/30s without API key
 	}
 	sem := make(chan struct{}, maxWorkers)
 
@@ -80,7 +82,7 @@ func GetCorpusParallel(numCve int, pageSize int, apiKey string) []parser.CVE {
 			defer func() { <-sem }() // release
 
 			// Rate limit: sleep between requests
-			time.Sleep(700 * time.Millisecond)
+			time.Sleep(rateLimitDelay)
 
 			filePath := fmt.Sprintf("./data/data-%v.json", i)
 			_, err := os.Stat(filePath)
@@ -88,7 +90,7 @@ func GetCorpusParallel(numCve int, pageSize int, apiKey string) []parser.CVE {
 			var nvdResult parser.NVDResponse
 
 			if err != nil {
-				fetchRes, err := FetchAndWrite(strconv.Itoa(i), "100", filePath, apiKey)
+				fetchRes, err := FetchAndWrite(strconv.Itoa(i), strconv.Itoa(pageSize), filePath, apiKey)
 				if err != nil {
 					log.Fatal("Error while fetching", err)
 				}
@@ -153,4 +155,13 @@ func GetEntireCorpus(apiKey string) []parser.CVE {
 	log.Printf("Total CVEs: %d", total)
 
 	return GetCorpus(total, pageSize, apiKey)
+}
+
+func GetEntireCorpusParallel(apiKey string) []parser.CVE {
+	const pageSize = 2000
+
+	total := 346996 // this number is from results page only
+	log.Printf("Total CVEs: %d", total)
+
+	return GetCorpusParallel(total, pageSize, apiKey)
 }
