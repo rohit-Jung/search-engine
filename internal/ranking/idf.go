@@ -13,6 +13,13 @@ type IDFIndex struct {
 	totalDocs int                // length of corpus
 }
 
+func (i *IDFIndex) TermCount() int {
+	if i == nil {
+		return 0
+	}
+	return len(i.scores)
+}
+
 // BuildIDF - allDocs - docID -> (term -> count)
 func BuildIDF(allDocs map[string]map[string]int) *IDFIndex {
 	docFreq := make(map[string]float64)
